@@ -1,0 +1,105 @@
+#Josué Salmerón Córdoba, C07183.
+#Este programa pide un numero entero por consola y calcula la serie de Padovan de éste e imprime el resultado final por consola.
+
+.data
+	Msg: .asciiz "Escriba un numero entero: \n"				#Primer mensaje inicial.
+	inputError: .asciiz "El numero tiene que ser un numero entero\n"	#Mensaje de aviso para comprobar que se trata de un numero mayor o igual que 0.
+	Result: .asciiz "La serie de Padovan del numero escrito es: \n "	#Mensaje que muestra el resultado final.
+.text
+	
+	main:									#Procedure de la función que llama a otras funciones.	
+	
+		jal LoadNum							#Llama a la funcion LoadNum en donde se digita el numero para hallar la serie de Padovan.
+		jal Loop							#Llama al Loop que se encarga de chequear cunado n=1,2 o 3.
+		
+        LoadNum:
+        
+        	addiu $v0, $0, 4    						#Se escribe un 4 en el registro $v0 ya que se trata de imprimir un string.
+		la $a0, Msg	     						#Cargamos la direccion del mensaje inicial en $a0
+		syscall		     						#Syscall sirve para que imprima el mensaje en la etiqueta: Msg. 
+	
+	        addiu $v0,$0,5	     						#Se pasa un 5 para darle a entender al sistema que se trata de un entero.
+	        syscall								# Se ejecuta la instrucción anterior.	
+	        
+	        addiu $s0,$s0, -1						#Se define un -1 para poder hacer una verificación con el numero digitado por el usuario.
+	        slt $t0,$s0,$v0 						#Aqui se chequea que el entero sea mayor o igual a cero.
+		beq $t0, $0, Error 						#Si el numero es negativo entonces se muestra el mensaje en InputError.
+		add $s0, $v0, $0 						#Pasamos el entero recibido por terminal a $s0
+	       
+	        addiu $t0,$v0,0      						#Se guarda el registro $t0 en $v0.
+		
+	        addiu $t0,$t0,1       						#Toma el valor escrito y se le suma 1.
+	        addiu $t1,$0,0        						#Se define un contador.
+	        addiu $t3,$0,1        						#Se define otro contador para n-2
+	        addiu $t4,$0,1        						#Se define otro contador para n-3
+	        addiu $t6,$0,1        						#Aqui se suman P(n-2)+P(n-3)
+	        
+	        addiu $v0,$0,4	      						#Se carga un string.
+		la $a0, Result	      						#Se carga en el contenido del mensaje en la etiqueta Result.
+	        syscall       							#Se imprime el mensaje en la etiqueta Result.
+		
+		addiu $v0,$0,11       						#Se escribe un 11 para indicarle al sistema que se trata de un caracter.
+	        addiu $a0,$0,123       						#Se escribe un 123 en base decimal que se trata del caracter: {
+        	syscall								#Se hace un syscall para poner { al inicio del resultado final.
+		
+		jr $ra								#Salto a la direccion $ra para devolvernos al main.
+		
+	Error:									#En este bloque se hace el chequeo si el numero digitado es valor mayor o igual a cero.
+		
+		addiu $v0, $0, 4 					       #Se escribe un 4 porque se trata de un string.
+		la $a0, inputError					       #Se carga la dirección del mensaje en la respectiva etiqueta.
+		syscall							       #Se imprime el mensaje almacenado en esa etiqueta.
+		
+		j LoadNum						       #Se salta a LoadNum y pide el numero entero de nuevo.
+        
+	Loop:								       #Función que 
+        	
+        	beq $t1,$t0,Ready					       #Si el contador es igual al entero escrito nos vamos a la etiqueta Ready.
+	        slti $t2,$t1,3      					       #Se hace un ciclo for y ver si n=0,1 o 2 e imprimir 1 y ver si el entero es 3.
+	        addiu $t1,$t1,1        					       #Aquí se incrementa el contador.
+	        beq $t2,$0,NoPrint  					       #Si $t2 es mayor o igual que 3, entonces no se imprime el 1, por lo que se llama la etiqueta NoPrint.
+                
+	        addiu $v0,$0,1					               #Se cargan los primeros números de la serie de Padovan.	
+	        addiu $a0,$t3,0						       #Ahora se cargan los valores de P(n-2).
+        	syscall							       #Se hace un llamado para ir mostrando los números de la serie.
+        	
+        	beq $t1, $t0, dont_print_extra_comma			      #Con este branch se evita imprimir una , si se trata del primer número de la iteración, o sea: 0.
+        	addiu $v0, $0, 11			                      #Se escribe un 11 para indicarle al sistema que se trata de un caracter.
+        	addiu $a0, $0, 44					      #Se escribe un 44 en base decimal que se trata del caracter: ,
+        	syscall							      #Le dice al programa que ponga una , en cada iteración.
+        	
+      dont_print_extra_comma: 					              #Aqui se evita imprimir una coma extra.
+        
+	        j Loop               					       #Esto es un salto al Loop.
+       
+	NoPrint:							      #Al no imprimir el 1 se realizan las nuevas operaciones para P(n-2) y P(n-3).
+	
+        	addiu $t7,$t3,0       					       #Se asigna un nuevo valor a  P(n-2).
+	        addiu $t3,$t4,0       					       #Se asigna un nuevo valor a P(n-3).
+	        addiu $t4,$t6,0      					       #Es la suma del último valor de la iteración.
+	        add $t6,$t7,$t3     					       #Se realiza la suma de P(n-2)+P(n-3).
+        
+	        addiu $v0,$0,1						       #Se guardan los últimos valores de la iteración 
+	        addiu $a0,$t6,0						       #Ahora se cargan en la dirección de $a0.
+        	syscall							       #Le decimos al sistema que nos muestre los resultados anteriores.
+        
+	        #if n is last element no  need to print a comma
+        	beq $t1,$t0,NoComma        				       #Esto sirve para indicarle al sistema que si se trata del último elemento de la iteración, entonces	
+        								       #que no ponga la , al final de éste. 
+        									
+        	addiu $v0,$0,11							#Se escribe un 11 para indicarle al sistema que se trata de un caracter.
+	        addiu $a0,$0,44							#Se escribe un 44 en base decimal que se trata del caracter: ,
+        	syscall								#Le dice al programa que no ponga una , al final del resultado en la iteración.
+        	     
+	NoComma: 								#Al no haber una , entonces se procede a saltar al Loop.
+	
+        	j Loop            						#Se hace el salto al Loop.
+
+	Ready:									#Esta función detalla el final de la iteración.
+        
+        	addiu $v0,$0,11       						#Se escribe un 11 para indicarle al sistema que se trata de un caracter.
+	        addiu $a0,$0,125       						#Se escribe un 125 en base decimal que se trata del caracter: }.
+        	syscall								#Se hace un syscall para poner } al final del resultado.
+        	
+        	addiu $v0,$0,10       						#Final del main para evitar recursión.
+	        syscall								#Fin del programa. 
